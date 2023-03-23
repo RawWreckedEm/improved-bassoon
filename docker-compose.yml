@@ -1,0 +1,62 @@
+version: '3.7'
+
+# Services
+services:
+
+  # Tor Service
+  tor:
+    container_name: Tor
+    image: goldy/tor-hidden-service:0.3.5.8
+    restart: always
+    links:
+      - nginx
+    environment:
+        # Set mapping ports
+        SERVICE1_TOR_SERVICE_HOSTS: 80:nginx:80
+        
+  # Nginx Service
+  nginx:
+    image: nginx:latest
+    container_name: Nginx
+    ports:
+      - 86:80
+      - 469:443
+    restart: always
+    volumes:
+      - ./src:/var/www/php:ro
+      - ./.docker/nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - php
+
+  # PHP Service
+  php:
+    container_name: PHP
+    build: ./.docker/php
+    working_dir: /var/www/php
+    restart: always
+    volumes:
+      - ./src:/var/www/php
+    depends_on:
+      - mysql
+
+  # MySQL Service
+  mysql:
+    container_name: MySQL
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE}"
+    volumes:
+      - ./.docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - .docker/mysql/mysqldata:/var/lib/mysql
+
+  #Redis Service
+  redis:
+    image: "redis:alpine"
+    container_name: Redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+
